@@ -191,6 +191,8 @@ func update() error {
 			}
 		}
 		handleFoodCollisions()
+		handleBodyCollisions()
+		handleEdgeCollisions()
 	}
 
 	return nil
@@ -206,6 +208,24 @@ func handleFoodCollisions() {
 			foods = append(foods[:i], foods[i+1:]...) // Remove the eaten food
 			addBodyPart()
 		}
+	}
+}
+
+func handleBodyCollisions() {
+	for i := len(snake.Body) - 1; i >= 0; i-- {
+		part := snake.Body[i]
+		if (snakeX < part.X+itemSize) && (snakeX+itemSize > part.X) && (snakeY < part.Y+itemSize) && (snakeY+itemSize > part.Y) {
+			//TODO: GAME OVER
+			fmt.Println("GAME OVER")
+			break
+		}
+	}
+}
+
+func handleEdgeCollisions() {
+	if (snakeX < 0) || (snakeX+itemSize > screenWidth) || (snakeY < 0) || (snakeY+itemSize > screenHeight) {
+		//TODO: GAME OVER
+		fmt.Println("GAME OVER")
 	}
 }
 
