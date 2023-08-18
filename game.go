@@ -52,6 +52,7 @@ var (
 	snakeX, snakeY, loopCount, totalScore           int
 	speed                                           = 25
 	redFruits, greenFruits, blueFruits, whiteFruits int
+	isGameOver                                      bool
 )
 
 func setScreenColor(screen *ebiten.Image) {
@@ -157,6 +158,9 @@ func drawSnake(screen *ebiten.Image) {
 }
 
 func update() error {
+	if isGameOver {
+		return nil
+	}
 
 	expireFood()
 	handleArrowKeyEvents()
@@ -193,8 +197,7 @@ func handleBodyCollisions() {
 	for i := len(snake.Body) - 1; i >= 0; i-- {
 		part := snake.Body[i]
 		if (snakeX < part.X+itemSize) && (snakeX+itemSize > part.X) && (snakeY < part.Y+itemSize) && (snakeY+itemSize > part.Y) {
-			//TODO: GAME OVER
-			fmt.Println("GAME OVER")
+			isGameOver = true
 			break
 		}
 	}
@@ -202,8 +205,7 @@ func handleBodyCollisions() {
 
 func handleEdgeCollisions() {
 	if (snakeX < 0) || (snakeX+itemSize > screenWidth) || (snakeY < 0) || (snakeY+itemSize > screenHeight) {
-		//TODO: GAME OVER
-		fmt.Println("GAME OVER")
+		isGameOver = true
 	}
 }
 
@@ -259,8 +261,7 @@ func expireFood() {
 	defer foodsMutex.Unlock()
 	if len(foods) > 0 {
 		for i := range foods {
-			if time.Now().Sub(foods[i].Creation) > foods[i].Duration {
-				fmt.Printf(foods[i].name + " expired\n")
+			if time.Since(foods[i].Creation) > foods[i].Duration {
 				foods = append(foods[:i], foods[i+1:]...)
 				break
 			}
@@ -315,9 +316,14 @@ func moveSnake() {
 }
 
 func (g *game) Draw(screen *ebiten.Image) {
-	setScreenColor(screen)
-	drawFood(screen)
-	drawSnake(screen)
+	if isGameOver {
+		title := fmt.Sprintf("GAME OVER      |      Red: %d, Green: %d, Blue: %d, White: %d, Score: %d", redFruits, greenFruits, blueFruits, whiteFruits, totalScore)
+		ebiten.SetWindowTitle(title)
+	} else {
+		setScreenColor(screen)
+		drawFood(screen)
+		drawSnake(screen)
+	}
 }
 
 func (g *game) Layout(outsideWidth, outsideHeight int) (int, int) {
