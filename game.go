@@ -190,9 +190,36 @@ func update() error {
 				oldX, oldY = currentX, currentY
 			}
 		}
+		handleFoodCollisions()
 	}
 
 	return nil
+}
+
+func handleFoodCollisions() {
+	foodsMutex.Lock()
+	defer foodsMutex.Unlock()
+
+	for i := len(foods) - 1; i >= 0; i-- {
+		food := foods[i]
+		if (snakeX < food.X+itemSize) && (snakeX+itemSize > food.X) && (snakeY < food.Y+itemSize) && (snakeY+itemSize > food.Y) {
+			foods = append(foods[:i], foods[i+1:]...) // Remove the eaten food
+			addBodyPart()
+		}
+	}
+}
+
+func addBodyPart() {
+	snake.BodySize++
+
+	c := 200 - uint8(len(snake.Body))*20
+	newBodyPart := SnakeBodyPart{
+		X:     snake.Body[len(snake.Body)-1].X,
+		Y:     snake.Body[len(snake.Body)-1].Y,
+		Color: color.RGBA{c, c, c, 255},
+	}
+
+	snake.Body = append(snake.Body, newBodyPart)
 }
 
 func (g *game) Draw(screen *ebiten.Image) {
