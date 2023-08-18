@@ -1,2 +1,2 @@
-# snakeGame_RD_GOlang
+# Snake Game
 Simple snake game to study development in GOlang
