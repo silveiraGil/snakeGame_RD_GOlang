@@ -17,6 +17,10 @@ const (
 	foodSpawnPeriod = 3 * time.Second
 	maxFoods        = 3
 	itemSize        = 15
+	Left            = iota
+	Up
+	Right
+	Down
 )
 
 type game struct{}
@@ -42,6 +46,9 @@ var (
 	foodsMutex     sync.Mutex // Mutex to protect the foods slice
 	snake          Snake
 	snakeX, snakeY int
+	direction      = Right
+	loopCount      int
+	speed          = 25
 )
 
 func setScreenColor(screen *ebiten.Image) {
@@ -132,6 +139,62 @@ func drawSnake(screen *ebiten.Image) {
 	}
 }
 
+func update() error {
+	// Handle arrow key events to change the snake's direction
+	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) && direction != Right {
+		direction = Left
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) && direction != Left {
+		direction = Right
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) && direction != Down {
+		direction = Up
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) && direction != Up {
+		direction = Down
+	}
+
+	// Increment the loop counter
+	loopCount++
+
+	// If the loop count reaches the desired speed, update the snake's position
+	if loopCount >= speed {
+		loopCount = 0 // Reset the loop count
+
+		// Move the body
+		if len(snake.Body) > 0 {
+			// Save the old position of the head
+			oldX, oldY := snakeX, snakeY
+
+			// Update the position of the head based on the direction
+			switch direction {
+			case Left:
+				snakeX -= itemSize
+			case Right:
+				snakeX += itemSize
+			case Up:
+				snakeY -= itemSize
+			case Down:
+				snakeY += itemSize
+			}
+
+			// Move the rest of the body
+			for i := 0; i < len(snake.Body); i++ {
+				// Save the current position of the body part
+				currentX, currentY := snake.Body[i].X, snake.Body[i].Y
+
+				// Move the body part to the previous position of the part in front of it
+				snake.Body[i].X, snake.Body[i].Y = oldX, oldY
+
+				// Update the old position to the current position for the next iteration
+				oldX, oldY = currentX, currentY
+			}
+		}
+	}
+
+	return nil
+}
+
 func (g *game) Draw(screen *ebiten.Image) {
 	setScreenColor(screen)
 	drawFood(screen)
@@ -143,6 +206,7 @@ func (g *game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func (g *game) Update() error {
+	update()
 	return nil
 }
 
