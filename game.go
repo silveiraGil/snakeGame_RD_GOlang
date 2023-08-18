@@ -28,6 +28,7 @@ type game struct{}
 type Food struct {
 	X, Y  int
 	Color color.Color
+	name  string
 }
 
 type SnakeBodyPart struct {
@@ -42,13 +43,13 @@ type Snake struct {
 }
 
 var (
-	foods          []*Food
-	foodsMutex     sync.Mutex // Mutex to protect the foods slice
-	snake          Snake
-	snakeX, snakeY int
-	direction      = Right
-	loopCount      int
-	speed          = 25
+	foods                                           []*Food
+	foodsMutex                                      sync.Mutex // Mutex to protect the foods slice
+	snake                                           Snake
+	direction                                       = Right
+	snakeX, snakeY, loopCount, totalScore           int
+	speed                                           = 25
+	redFruits, greenFruits, blueFruits, whiteFruits int
 )
 
 func setScreenColor(screen *ebiten.Image) {
@@ -72,20 +73,28 @@ func createFood() {
 	y := rand.Intn(screenHeight - itemSize)
 
 	var foodColor color.Color
+	var name string
 
-	switch rand.Intn(3) {
+	switch rand.Intn(4) {
 	case 0:
 		foodColor = color.RGBA{255, 0, 0, 255}
+		name = "Red"
 	case 1:
 		foodColor = color.RGBA{0, 0, 255, 255}
+		name = "Blue"
 	case 2:
 		foodColor = color.RGBA{255, 255, 255, 255}
+		name = "White"
+	case 3:
+		foodColor = color.RGBA{0, 255, 0, 255}
+		name = "Green"
 	}
 
 	food := &Food{
 		X:     x,
 		Y:     y,
 		Color: foodColor,
+		name:  name,
 	}
 
 	foods = append(foods, food)
@@ -205,6 +214,32 @@ func handleFoodCollisions() {
 	for i := len(foods) - 1; i >= 0; i-- {
 		food := foods[i]
 		if (snakeX < food.X+itemSize) && (snakeX+itemSize > food.X) && (snakeY < food.Y+itemSize) && (snakeY+itemSize > food.Y) {
+			var score int
+			switch food.name {
+			case "Red":
+				redFruits++
+				score = rand.Intn(5)
+			case "Blue":
+				blueFruits++
+				score = rand.Intn(4)
+			case "White":
+				whiteFruits++
+				score = rand.Intn(3)
+			case "Green":
+				greenFruits++
+				score = rand.Intn(2)
+			}
+
+			totalScore = totalScore + score
+
+			if speed <= 6 {
+				speed = speed + score
+			} else {
+				speed = speed - score
+			}
+
+			updateScore()
+
 			foods = append(foods[:i], foods[i+1:]...) // Remove the eaten food
 			addBodyPart()
 		}
@@ -242,6 +277,12 @@ func addBodyPart() {
 	snake.Body = append(snake.Body, newBodyPart)
 }
 
+func updateScore() {
+	// Update the game title with the fruit counts and total score
+	title := fmt.Sprintf("Snake Game      |      Red: %d, Green: %d, Blue: %d, White: %d, Score: %d", redFruits, greenFruits, blueFruits, whiteFruits, totalScore)
+	ebiten.SetWindowTitle(title)
+}
+
 func (g *game) Draw(screen *ebiten.Image) {
 	setScreenColor(screen)
 	drawFood(screen)
@@ -260,8 +301,7 @@ func (g *game) Update() error {
 func main() {
 
 	ebiten.SetWindowSize(screenWidth, screenHeight)
-	title := "Snake Game"
-	ebiten.SetWindowTitle(title)
+	updateScore()
 
 	// Start the goroutine to create food
 	go createFoodRoutine()
