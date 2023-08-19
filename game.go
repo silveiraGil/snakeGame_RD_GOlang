@@ -117,8 +117,6 @@ func initializeSnake() {
 	// Set snake's body colors
 	snake.Body = make([]SnakeBodyPart, snake.BodySize) // Initialize the slice with the correct size
 	for i := range snake.Body {
-		// Set the color for each body part
-		// The body parts closer to the head are lighter in color
 		c := 200 - uint8(i)*20
 		snake.Body[i].Color = color.RGBA{c, c, c, 255}
 	}
@@ -152,7 +150,7 @@ func drawSnake(screen *ebiten.Image) {
 
 	// Draw snake's body
 	for _, part := range snake.Body {
-		bodyColor := color.RGBA{127, 127, 127, 100}
+		bodyColor := part.Color
 		vector.DrawFilledRect(screen, float32(part.X), float32(part.Y), float32(itemSize), float32(itemSize), bodyColor, true)
 	}
 }
@@ -188,7 +186,7 @@ func handleFoodCollisions() {
 		if (snakeX < food.X+itemSize) && (snakeX+itemSize > food.X) && (snakeY < food.Y+itemSize) && (snakeY+itemSize > food.Y) {
 			setScore(food.name)
 			foods = append(foods[:i], foods[i+1:]...) // Remove the eaten food
-			addBodyPart()
+			addBodyPart(food)
 		}
 	}
 }
@@ -209,14 +207,13 @@ func handleEdgeCollisions() {
 	}
 }
 
-func addBodyPart() {
+func addBodyPart(food *Food) {
 	snake.BodySize++
 
-	c := 200 - uint8(len(snake.Body))*20
 	newBodyPart := SnakeBodyPart{
 		X:     snake.Body[len(snake.Body)-1].X,
 		Y:     snake.Body[len(snake.Body)-1].Y,
-		Color: color.RGBA{c, c, c, 255},
+		Color: food.Color,
 	}
 
 	snake.Body = append(snake.Body, newBodyPart)
